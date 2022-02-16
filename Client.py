@@ -11,11 +11,11 @@ while not name_or_nickname:
 
 #defining the server socket
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-host = "Chathost" # "128.0.1.1"
+host = "127.0.0.1" # "128.0.1.1"
 port =55010
 
 #conecting to the server
-server.connect(host,port)
+server.connect((host,port))
 
 ## that alowes the client to send messages multiple messages to the server
 def thread_sender():
@@ -30,7 +30,7 @@ def thread_recive_a_massage():
         recived = server.recv(1024).decode()
         print(recived)
 
-thread_send = threading.Thread(target=thread_send())
+thread_send = threading.Thread(target=thread_sender())
 thread_reciver = threading.Thread(target= thread_recive_a_massage())
 thread_send.start()
 thread_reciver.start()
@@ -39,4 +39,3 @@ thread_reciver.start()
 
 
 ##
-)

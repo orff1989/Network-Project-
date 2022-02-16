@@ -59,7 +59,7 @@ def broadcast(msg, sourceSocket):
 while True:
     conn, addr = soc.accept()
 
-    print(addr[0] + "is connected")
+    print(addr[0] + " is connected")
 
     Thread(clientListen, (conn, addr))
 
