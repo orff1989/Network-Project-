@@ -1,66 +1,98 @@
+import socket
 from threading import Thread
-from socket import *
-import select
-import sys
 
 
-ip= "0.0.0.0"
-port = "55010"
+ip = "0.0.0.0"
+port = 55010
 
-#here we create the socket, sock_stream means it tcp protocol
-soc = socket(AF_INET, SOCK_STREAM)
+#dictionery of all the online clients
+client_sockets = {}
 
-#
-soc.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
+#making TCP socket
+s = socket.socket()
 
-#here we bind the ip to the port number
-soc.bind((ip,int(port)))
+# make the port as reusable port
+s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
-#this server can listen up to 50 clients
-soc.listen(50)
+# bind ip and port
+s.bind((ip, port))
+
+# listen for upcoming connections
+s.listen(50)
 print("Listening...")
 
-#dictionery to store all the online clients
-clients = {}
+#this method is sending the message for every online person
+def broadcast(msg, source):
+    for c in client_sockets:
+        c.send(msg.encode())
 
+#this method send to a specific person a message
+def sendTo(msg, to):
+    s = client_sockets.get(to)
+    if s!=None:
+        s.send(msg.encode())
+        print(f"sending to {to}: {msg}")
+
+#this method is listening for clients
 def clientListen(cl):
-
     while True:
         try:
-            message = cl.recv(1024).decode()
-
-            first_word = message.split()[0]
-            message=message.replace(first_word,"")
-
-            if first_word == "broadcast":
-                broadcast(message,cl)
-
-            if first_word == "addC":
-                clients[message]=cl
-
-            else:
-                if clients.get(first_word)==None:
-                    cl.se
+            msg = cl.recv(1024).decode()
 
         except Exception as e:
-            print(f"Error {e}")
+            print(" Error: " + e)
 
-#this method is sending a bordcast message to the chat room
-def broadcast(msg, sourceSocket):
-    for c in clients.values():
-        # and send the message
-        if c != sourceSocket:
-            try:
-                clients.send(msg)
-            except:
-                clients.close()
+        print(msg)
 
+        first_word = msg.split()[0]
+        msg = msg.replace(first_word+" ", "")
+
+        # sending the message for every online person
+        if first_word == "$broadcast":
+            broadcast(msg, cl)
+            print("sending broadcast massage: "+ msg)
+
+        # adding a new client to the dict
+        elif first_word == "$addC":
+            first_word = msg.split()[0]
+
+            client_sockets[first_word] = cl
+            print("Adding new Client: "+first_word)
+
+        # sending a message to a specific person
+        elif first_word=="$sendTo":
+            first_word = msg.split()[0]
+            msg = msg.replace(first_word+" ", "")
+
+            sendTo(msg,first_word)
+
+        elif first_word == "$get_users":
+            l = client_sockets.keys().__str__()
+            print(l)
+            cl.send(l.encode())
+
+            print("returning the online people: "+l)
+
+        elif first_word == "$disconnect":
+
+
+            print("returning the online people: " + l)
 
 while True:
-    conn, addr = soc.accept()
+    #accepting the data that was sent to the server
+    cSoc, cAddress = s.accept()
+    print(f"{cAddress} connected.")
 
-    print(addr[0] + " is connected")
+    #creating new thread for each client messages
+    t = Thread(target=clientListen, args=(cSoc,))
 
-    Thread(clientListen, (conn, addr))
+    #make the thread run until the main thread die
+    t.daemon = True
+    # start the thread
+    t.start()
 
-soc.close()
+#closing the sockets
+for cs in client_sockets:
+    cs.close()
+
+s.close()
