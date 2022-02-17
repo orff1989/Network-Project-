@@ -1,39 +1,62 @@
 # This prrogrem will implement a client side in simple chat
 
 import socket
-import select
-import threading
+from threading import Thread
 
-## the first thing entering a chat is to choose your nickname
-name_or_nickname = input("please enter your display name : ").strip()
-while not name_or_nickname:
-    name_or_nickname = input("you must fill this with your choise: ").strip()
+# this method getting the first command
+def geting_info():
+    global str, name, command
+
+    str = input().strip()
+    try:
+        command = str.split()[0]
+        name = str.split()[1]
+
+    except Exception as e:
+        print(e)
+
+    while not str or command!="connect" or name==None:
+            str = input().strip()
+            try:
+                command = str.split()[0]
+                name = str.split()[1]
+            except Exception as e:
+                print(e)
+
+geting_info()
 
 #defining the server socket
-server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-host = "127.0.0.1" # "128.0.1.1"
+soc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+host = "127.0.0.1"
 port =55010
 
 #conecting to the server
-server.connect((host,port))
+soc.connect((host,port))
 
-## that alowes the client to send messages multiple messages to the server
-def thread_sender():
+#adding the new user
+c = f"addC "+ name
+soc.send(c.encode())
+
+def messagesListener():
     while True:
-        send_a_message = input("please entet ypur message :")
-        server.send(send_a_message.encode())
+        msg = soc.recv(1024).decode()
+        print(msg)
 
-## that alowes the client to recive massage from the server
+# creating new thread for each client messages
+th = Thread(target=messagesListener)
+# make the thread run until the main thread die
+th.daemon = True
 
-def thread_recive_a_massage():
-    while True:
-        recived = server.recv(1024).decode()
-        print(recived)
+th.start()
 
-thread_send = threading.Thread(target=thread_sender())
-thread_reciver = threading.Thread(target= thread_recive_a_massage())
-thread_send.start()
-thread_reciver.start()
+while True:
+    # getting the message
+    msg =  input()
+
+    soc.send(msg.encode())
+
+# close the socket
+soc.close()
 
 # ask_for_download
 

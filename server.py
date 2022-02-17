@@ -21,10 +21,20 @@ s.bind((ip, port))
 s.listen(50)
 print("Listening...")
 
+#this method returns the name of the user by its socket
+def findBySocet(so):
+    for k, v in client_sockets.items():
+        if v==so:
+            return k
+
 #this method is sending the message for every online person
-def broadcast(msg, source):
-    for c in client_sockets:
-        c.send(msg.encode())
+def broadcast(msg):
+
+    for c in client_sockets.values():
+        try:
+            c.send(msg.encode())
+        except Exception as e:
+            print("error "+ e)
 
 #this method send to a specific person a message
 def sendTo(msg, to):
@@ -33,63 +43,85 @@ def sendTo(msg, to):
         s.send(msg.encode())
         print(f"sending to {to}: {msg}")
 
+#this method returns list of the online users
+def getList(d):
+    l = None
+    for k in d.keys():
+        if l==None:
+            l=k;
+        else:
+            l=f"{l},{k}"
+    return l
+
 #this method is listening for clients
 def clientListen(cl):
+
     while True:
         try:
             msg = cl.recv(1024).decode()
 
         except Exception as e:
-            print(" Error: " + e)
+            print("Error: " + e)
 
         print(msg)
+
+        source = findBySocet(cl)
 
         first_word = msg.split()[0]
         msg = msg.replace(first_word+" ", "")
 
         # sending the message for every online person
-        if first_word == "$broadcast":
-            broadcast(msg, cl)
+        if first_word == "set_msg_all":
+            msg= f"{source}: {msg}"
+            broadcast(msg)
             print("sending broadcast massage: "+ msg)
 
         # adding a new client to the dict
-        elif first_word == "$addC":
+        elif first_word == "addC":
             first_word = msg.split()[0]
 
             client_sockets[first_word] = cl
             print("Adding new Client: "+first_word)
 
         # sending a message to a specific person
-        elif first_word=="$sendTo":
+        elif first_word=="set_msg":
             first_word = msg.split()[0]
             msg = msg.replace(first_word+" ", "")
+            msg = f"{source}: {msg}"
 
             sendTo(msg,first_word)
 
-        elif first_word == "$get_users":
-            l = client_sockets.keys().__str__()
+        elif first_word == "get_users":
+            l = getList(client_sockets)
             print(l)
             cl.send(l.encode())
 
             print("returning the online people: "+l)
 
-        elif first_word == "$disconnect":
+        elif first_word == "disconnect":
+            n=""
+            for name, soc in client_sockets.items():
+                if cl==soc:
+                    soc.close()
+                    client_sockets.pop(name)
+                    n=name
 
-
-            print("returning the online people: " + l)
+            print("disconnecting: " + n)
+            break
 
 while True:
     #accepting the data that was sent to the server
     cSoc, cAddress = s.accept()
     print(f"{cAddress} connected.")
+    cSoc.send("conncetd".encode())
 
     #creating new thread for each client messages
-    t = Thread(target=clientListen, args=(cSoc,))
+    th = Thread(target=clientListen, args=(cSoc,))
 
     #make the thread run until the main thread die
-    t.daemon = True
+    th.daemon = True
     # start the thread
-    t.start()
+    th.start()
 
 #closing the sockets
 for cs in client_sockets:
