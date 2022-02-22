@@ -29,7 +29,6 @@ def findBySocet(so):
 
 #this method is sending the message for every online person
 def broadcast(msg):
-
     for c in client_sockets.values():
         try:
             c.send(msg.encode())
@@ -55,7 +54,6 @@ def getList(d):
 
 #this method is listening for clients
 def clientListen(cl):
-
     while True:
         try:
             msg = cl.recv(1024).decode()
@@ -68,7 +66,7 @@ def clientListen(cl):
         source = findBySocet(cl)
 
         first_word = msg.split()[0]
-        msg = msg.replace(first_word+" ", "")
+        msg = msg.replace(first_word+" ", "",1)
 
         # sending the message for every online person
         if first_word == "set_msg_all":
@@ -86,7 +84,7 @@ def clientListen(cl):
         # sending a message to a specific person
         elif first_word=="set_msg":
             first_word = msg.split()[0]
-            msg = msg.replace(first_word+" ", "")
+            msg = msg.replace(first_word+" ", "",1)
             msg = f"{source}: {msg}"
 
             sendTo(msg,first_word)
