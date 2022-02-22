@@ -9,7 +9,7 @@ port = 55010
 client_sockets = {}
 
 #making TCP socket
-s = socket.socket()
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 # make the port as reusable port
 s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
