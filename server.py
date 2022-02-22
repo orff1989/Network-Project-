@@ -111,7 +111,7 @@ while True:
     #accepting the data that was sent to the server
     cSoc, cAddress = s.accept()
     print(f"{cAddress} connected.")
-    cSoc.send("conncetd".encode())
+    cSoc.send("connected".encode())
 
     #creating new thread for each client messages
     th = Thread(target=clientListen, args=(cSoc,))
