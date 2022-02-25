@@ -1,4 +1,5 @@
 import socket
+import os
 
 #this method prevent calculate ord of int instead of char
 def ordHelper(n):
@@ -29,10 +30,9 @@ def checksumCalculator(msg):
 
     return chr(int(ans / 256)) + chr(ans % 256)
 
-
-buffSize = 100
-
+# this method sends the file to the client
 def theSender(nameOfFile, ip):
+    buffSize = 200
 
     PortSend = 55006
     PortRecv = 55005
@@ -43,6 +43,10 @@ def theSender(nameOfFile, ip):
     # reading the file
     with open(nameOfFile) as f:
         data = f.read()
+
+    # getting the size of the file
+    size = os.path.getsize(nameOfFile)
+    data = str(size) + str(" ")+ data
 
     # adding ~ to the end of the data
     data = data + " ~"
@@ -81,6 +85,9 @@ def theSender(nameOfFile, ip):
 
             except socket.timeout:
                 print("Timeout")
+
+                if buffSize>100:
+                    buffSize=buffSize/2
             else:
 
                 checksum = theMsg[:2]
@@ -92,6 +99,9 @@ def theSender(nameOfFile, ip):
                 # checking if the checksum is equal to what we got
                 if checksumCalculator(theMsg) == checksum and ack_seq == str(sequence):
                     gotAck = True
+
+                    if buffSize<=2000:
+                        buffSize=buffSize*2
 
         # changing the predicted sequence to the other one: 1->0, 0->1
         sequence = (sequence +1)%2

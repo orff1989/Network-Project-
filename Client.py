@@ -42,14 +42,15 @@ soc.send(c.encode())
 def messagesListener():
     while True:
         msg = soc.recv(1024).decode()
-        print(msg)
 
         if msg[:13] == "sending file:":
 
-            print("start download: "+ msg[14:])
             th2 = Thread(target=receiver.recvFile(msg[14:],host))
             th2.daemon = True
             th2.start()
+
+        else: print(msg)
+
 
 # creating new thread for each client messages
 th1 = Thread(target=messagesListener)

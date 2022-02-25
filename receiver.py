@@ -1,4 +1,5 @@
 import socket
+import os
 
 #this method prevent calculate ord of int instead of char
 def ordHelper(n):
@@ -53,7 +54,7 @@ def recvFile(fileName, ip):
     predictedSeq = 0
     print("receiving...")
     done=False
-
+    size=None
     while True:
         # receiving the data from the sender
         theMsg, addr = socketReceiver.recvfrom(4096)
@@ -76,11 +77,22 @@ def recvFile(fileName, ip):
 
             # checking if the the sequence is the predicted one
             if sequence == str(predictedSeq):
-                theMsg = theMsg.replace(" ~","")
+
+                if size==None:
+                    size = int(theMsg.split()[0])
+                    theMsg = theMsg.replace(str(size) + " ", "", 1)
+
+                theMsg = theMsg.replace(" ~", "")
+
+
 
                 # open new file and copy the data to it
                 with open(fileName, 'a') as f:
                     f.write(theMsg)
+
+                currSize = os.path.getsize(fileName)
+                prec = 100*currSize / size
+                print("You downloaded " + str("{:.2f}".format(prec)) + "% out of file. Last byte is: "+str(currSize) + ".")
 
                 print(theMsg)
                 # changing the predicted sequence to the other one: 1->0, 0->1
