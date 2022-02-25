@@ -15,16 +15,15 @@ def geting_info():
 
     except Exception as e:
         print(e)
-def sendFile():
 
-
-    while not str or command!="connect" or name==None:
-            str = input().strip()
-            try:
-                command = str.split()[0]
-                name = str.split()[1]
-            except Exception as e:
-                print(e)
+# def sendFile():
+#     while not str or command!="connect" or name==None:
+#             str = input().strip()
+#             try:
+#                 command = str.split()[0]
+#                 name = str.split()[1]
+#             except Exception as e:
+#                 print(e)
 
 geting_info()
 
@@ -45,6 +44,13 @@ def messagesListener():
         msg = soc.recv(1024).decode()
         print(msg)
 
+        if msg[:13] == "sending file:":
+
+            print("start download: "+ msg[14:])
+            th2 = Thread(target=receiver.recvFile(msg[14:],host))
+            th2.daemon = True
+            th2.start()
+
 # creating new thread for each client messages
 th1 = Thread(target=messagesListener)
 
@@ -56,16 +62,16 @@ th1.daemon = True
 th1.start()
 
 
-
 while True:
     # getting the message
     msg = input()
     soc.send(msg.encode())
 
-    if msg.split()[0]=="download":
-        th2 = Thread(target=receiver.recvFile("file.txt",host))
-        th2.daemon = True
-        th2.start()
+    # if msg.split()[0]=="download":
+    #
+    #     th2 = Thread(target=receiver.recvFile(msg.split()[1],host))
+    #     th2.daemon = True
+    #     th2.start()
 
 # close the socket
 soc.close()

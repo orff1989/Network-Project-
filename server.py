@@ -116,10 +116,12 @@ def clientListen(cl, cAddr):
 
 
         elif first_word== "download":
-            files = str(os.listdir('.'))
+            files = os.listdir('.')
+
             if msg in files:
+                cl.send(("sending file: "+msg).encode())
                 print("asking to download: "+ msg)
-                sender.theSender(msg,'127.0.0.1')
+                sender.theSender(msg,cAddr[0])
             else:
                 cl.send("There is no such file.".encode())
 
