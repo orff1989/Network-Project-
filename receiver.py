@@ -90,11 +90,14 @@ def recvFile(fileName, ip):
                 with open(fileName, 'a') as f:
                     f.write(theMsg)
 
-                currSize = os.path.getsize(fileName)
-                prec = 100*currSize / size
-                print("You downloaded " + str("{:.2f}".format(prec)) + "% out of file. Last byte is: "+str(currSize) + ".")
-
                 print(theMsg)
+
+                currSize = os.path.getsize(fileName)
+                prec = 100 * currSize / size
+
+                print("You downloaded " + str("{:.2f}".format(prec)) + "% out of file. Last byte is: " + str(
+                    currSize) + ".")
+
                 # changing the predicted sequence to the other one: 1->0, 0->1
                 predictedSeq = (predictedSeq +1)%2
 
