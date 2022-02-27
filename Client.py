@@ -97,6 +97,12 @@ def recvFile(fileName, ip):
                 currSize = os.path.getsize(fileName)
                 prec = 100 * currSize / size
 
+                flag = True
+                if prec > 50 and flag:
+                    send(socketSender, "proceed", destT)
+                    flag = False
+
+
                 print("You downloaded " + str("{:.2f}".format(prec)) + "% out of file. Last byte is: " + str(
                     currSize) + ".")
 
@@ -109,7 +115,7 @@ def recvFile(fileName, ip):
 
         else:
             NAK = str((predictedSeq+1)%2)
-            send("ACK" + NAK, destT)
+            send(socketSender, "ACK" + NAK, destT)
 
 
 ################################################# Client #####################################################
