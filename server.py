@@ -37,13 +37,12 @@ def checksumCalculator(msg):
 
 # this method sends the file to the client
 def theSender(nameOfFile, ip):
-    
+
     buffSize = 200
 
     PortSend = 55006
     PortRecv = 55005
 
-    
     recvT = ("0.0.0.0", PortRecv)
     destT = (ip, PortSend)
 
@@ -107,7 +106,7 @@ def theSender(nameOfFile, ip):
                 if checksumCalculator(theMsg) == checksum and ack_seq == str(sequence):
                     gotAck = True
 
-                    if buffSize <= 4000:
+                    if buffSize <= 2000:
                         buffSize = buffSize * 2
 
         # changing the predicted sequence to the other one: 1->0, 0->1
@@ -228,7 +227,7 @@ def clientListen(cl, cAddr):
                 if msg in files:
                     cl.send(("sending file: "+msg).encode())
                     print("asking to download: "+ msg)
-                    theSender(msg,str(cAddr[0]))
+                    theSender(msg,cAddr[0])
                 else:
                     cl.send("There is no such file.".encode())
 

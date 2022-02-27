@@ -45,7 +45,7 @@ def recvFile(fileName, ip):
     PortSend = 55005
     PortRecv = 55006
 
-    recvT = (ip, PortRecv)
+    recvT = ("0.0.0.0", PortRecv)
     destT = (ip, PortSend)
 
     # creating the sender and receiver socket
@@ -97,12 +97,6 @@ def recvFile(fileName, ip):
                 currSize = os.path.getsize(fileName)
                 prec = 100 * currSize / size
 
-                flag = True
-                if prec > 50 and flag:
-                    send(socketSender, "proceed", destT)
-                    flag = False
-
-
                 print("You downloaded " + str("{:.2f}".format(prec)) + "% out of file. Last byte is: " + str(
                     currSize) + ".")
 
@@ -115,7 +109,7 @@ def recvFile(fileName, ip):
 
         else:
             NAK = str((predictedSeq+1)%2)
-            send(socketSender, "ACK" + NAK, destT)
+            send("ACK" + NAK, destT)
 
 
 ################################################# Client #####################################################
@@ -134,8 +128,8 @@ def geting_info():
 
 geting_info()
 
-hostName = socket.gethostname()
-host = "0.0.0.0"
+
+host = "10.0.2.4"
 
 port =55010
 
