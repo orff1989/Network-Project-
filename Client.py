@@ -135,7 +135,7 @@ def geting_info():
 geting_info()
 
 hostName = socket.gethostname()
-host = socket.gethostbyname(hostName)
+host = "0.0.0.0"
 
 port =55010
 
