@@ -129,7 +129,7 @@ def geting_info():
 geting_info()
 
 
-host = "10.0.2.4"
+host = "127.0.0.1"
 
 port =55010
 

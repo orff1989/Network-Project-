@@ -106,7 +106,7 @@ def theSender(nameOfFile, ip):
                 if checksumCalculator(theMsg) == checksum and ack_seq == str(sequence):
                     gotAck = True
 
-                    if buffSize <= 2000:
+                    if buffSize <= 3000:
                         buffSize = buffSize * 2
 
         # changing the predicted sequence to the other one: 1->0, 0->1
