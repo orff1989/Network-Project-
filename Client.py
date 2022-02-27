@@ -2,6 +2,11 @@ import socket
 from threading import Thread
 import os
 
+#------------------------#
+server_IP="127.0.0.1"
+#------------------------#
+
+
 ######################################### receiver ########################################################
 
 #this method prevent calculate ord of int instead of char
@@ -129,7 +134,7 @@ def geting_info():
 geting_info()
 
 
-host = "127.0.0.1"
+host = server_IP
 
 port =55010
 
