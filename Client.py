@@ -4,6 +4,8 @@ import os
 
 #------------------------#
 server_IP="127.0.0.1"
+
+server_PORT=55010
 #------------------------#
 
 
@@ -38,11 +40,13 @@ def checksumCalculator(msgg):
 
     return chr(int(ans / 256)) + chr(ans % 256)
 
+
 # this method sends message to the dest
 def send(theSocket,theMessage, theDest):
     checksum = checksumCalculator(theMessage)
     theData = str(checksum) + str(theMessage)
     theSocket.sendto(theData.encode(), theDest)
+
 
 # this method gets the file that was sent
 def recvFile(fileName, ip):
@@ -118,70 +122,89 @@ def recvFile(fileName, ip):
 
 
 ################################################# Client #####################################################
+class Client:
 
-def geting_info():
-    global info, name, command
+    def __init__(self):
+        print("Client created")
 
-    info = input().strip()
-    try:
-        command = info.split()[0]
-        name = info.split()[1]
+    def geting_info(self):
+        global name, command
 
-    except Exception as e:
-        print(e)
+        info = input().strip()
+        try:
+            command = info.split()[0]
+            name = info.split()[1]
 
+        except Exception as e:
+            print(e)
 
-geting_info()
+    # this method connects to the server
+    def connect_to_server(self,host,port):
+        # defining the server socket
+        self.soc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
+        # conecting to the server
+        self.soc.connect((host, port))
 
-host = server_IP
+        # adding the new user
+        c = f"addC " + name
+        self.soc.send(c.encode())
 
-port =55010
+    # this method listens to the messages
+    def messagesListener(self):
+        while True:
+            msg = self.soc.recv(1024).decode()
 
-#defining the server socket
-soc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            if msg[:13] == "sending file:":
+                try:
+                    th2 = Thread(target=recvFile(msg[14:], server_IP))
+                    th2.daemon = True
+                    th2.start()
 
-#conecting to the server
-soc.connect((host,port))
+                except Exception as e:
+                    print(e)
 
-#adding the new user
-c = f"addC "+ name
-soc.send(c.encode())
+            else:
+                print(msg)
 
-def messagesListener():
-    while True:
-        msg = soc.recv(1024).decode()
-
-        if msg[:13] == "sending file:":
+    # this method gets the data and sends it
+    def get_and_send(self):
+        while True:
+            # getting the message
             try:
-                th2 = Thread(target=recvFile(msg[14:],host))
-                th2.daemon = True
-                th2.start()
+                msg = input()
+                self.soc.send(msg.encode())
 
             except Exception as e:
                 print(e)
 
-        else: print(msg)
+        # close the socket
+        self.soc.close()
+
+    # this method connect entirely to the server
+    def join_to_server(self):
+        self.geting_info()
+
+        host = server_IP
+        port = server_PORT
+
+        self.connect_to_server(host, port)
+
+        # creating new thread for each client messages
+        th1 = Thread(target=self.messagesListener, )
+
+        # make the thread run until the main thread die
+        th1.daemon = True
+        th1.start()
+
+        self.get_and_send()
+
+if __name__ == '__main__':
+    c= Client()
+    c.join_to_server()
 
 
-# creating new thread for each client messages
-th1 = Thread(target=messagesListener)
 
-# make the thread run until the main thread die
-th1.daemon = True
-th1.start()
-
-while True:
-    # getting the message
-    try:
-        msg = input()
-        soc.send(msg.encode())
-
-    except Exception as e:
-        print(e)
-
-# close the socket
-soc.close()
 
 
 
