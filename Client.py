@@ -2,11 +2,11 @@ import socket
 from threading import Thread
 import os
 
-#------------------------#
-server_IP="127.0.0.1"
+# ------------------------#
+server_IP = "127.0.0.1"
 
-server_PORT=55010
-#------------------------#
+server_PORT = 55010
+# ------------------------#
 
 
 ######################################### receiver ########################################################
@@ -118,7 +118,7 @@ def recvFile(fileName, ip):
 
         else:
             NAK = str((predictedSeq+1)%2)
-            send("ACK" + NAK, destT)
+            send(socketSender, "ACK" + NAK, destT)
 
 
 ################################################# Client #####################################################
