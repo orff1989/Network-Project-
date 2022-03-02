@@ -41,90 +41,116 @@ def checksumCalculator(msg):
     return chr(int(ans / 256)) + chr(ans % 256)
 
 
-# this method sends the file to the client
-def theSender(nameOfFile, ip):
 
-    buffSize = 200
-
-    PortSend = 55006
-    PortRecv = 55005
-
-    recvT = ("0.0.0.0", PortRecv)
-    destT = (ip, PortSend)
-
-    # reading the file
-    with open(nameOfFile) as f:
-        data = f.read()
-
-    # getting the size of the file
-    size = os.path.getsize(nameOfFile)
-    data = str(size) + str(" ") + data
-
-    # adding ~ to the end of the data
-    data = data + " ~"
-
-    # creating the sender and receiver socket
-    socketSender = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    socketReceiver = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-
-    # binding the socket
-    socketReceiver.bind(recvT)
-
-    # setting timeout
-    socketReceiver.settimeout(1)
-
-    pos = 0
-    sequence = 0
-
-    while pos < len(data):
-
-        # putting the data to send in the buffer
-        if pos + buffSize > len(data):
-            buff = data[pos:]
-        else:
-            buff = data[pos:pos + buffSize]
-        pos += buffSize
-
-        gotAck = False
-        while not gotAck:
-            m = str(checksumCalculator(buff)) + str(sequence) + str(buff)
-            socketSender.sendto(m.encode(), destT)
-
-            try:
-                # receiving the data from the sender
-                theMsg, address = socketReceiver.recvfrom(4096)
-                theMsg = theMsg.decode()
-
-            except socket.timeout:
-                print("Timeout")
-
-                if buffSize > 100:
-                    buffSize = buffSize / 2
-            else:
-
-                checksum = theMsg[:2]
-                ack_seq = theMsg[5]
-                theMsg = theMsg[2:]
-
-                print(theMsg)
-
-                # checking if the checksum is equal to what we got
-                if checksumCalculator(theMsg) == checksum and ack_seq == str(sequence):
-                    gotAck = True
-
-                    if buffSize <= 3000:
-                        buffSize = buffSize * 2
-
-        # changing the predicted sequence to the other one: 1->0, 0->1
-        sequence = (sequence + 1) % 2
 
 
 # ############################### SERVER #################################### #
+
+
+
 
 class Server:
 
     def __init__(self):
         self.client_sockets = {}
+        self.client_pos = {}
+
+
+
+    # this method sends the file to the client
+    def theSender(self, nameOfFile, ip, name, pos):
+        buffSize = 50
+
+        flag_proceed=True
+
+        if pos!=0:
+            flag_proceed=False
+
+        PortSend = 55006
+        PortRecv = 55005
+
+        recvT = ("0.0.0.0", PortRecv)
+        destT = (ip, PortSend)
+
+        # reading the file
+        with open(nameOfFile) as f:
+            data = f.read()
+
+        # getting the size of the file
+        size = os.path.getsize(nameOfFile)
+
+        if pos!=0:
+            data=data[pos-3:]
+            pos=0
+
+        data = str(size) + str(" ") + data
+
+        # adding ~ to the end of the data
+        data = data + " ~"
+
+        # creating the sender and receiver socket
+        socketSender = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        socketReceiver = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+
+        # binding the socket
+        socketReceiver.bind(recvT)
+
+        # setting timeout
+        socketReceiver.settimeout(1)
+
+
+        sequence = 0
+        flag=True
+
+        while pos < len(data) and flag:
+
+            # putting the data to send in the buffer
+            if pos + buffSize > len(data):
+                buff = data[pos:]
+            else:
+                buff = data[pos:pos + buffSize]
+            pos += buffSize
+
+
+            gotAck = False
+            while not gotAck:
+                m = str(checksumCalculator(buff)) + str(sequence) + str(buff)
+                socketSender.sendto(m.encode(), destT)
+
+                try:
+                    # receiving the data from the sender
+                    theMsg, address = socketReceiver.recvfrom(4096)
+                    theMsg = theMsg.decode()
+
+                except socket.timeout:
+                    print("Timeout")
+
+                    if buffSize >= 100:
+                        buffSize = buffSize / 2
+                else:
+
+                    checksum = theMsg[:2]
+                    ack_seq = theMsg[5]
+                    theMsg = theMsg[2:]
+
+                    print(theMsg)
+
+                    # checking if the checksum is equal to what we got
+                    if checksumCalculator(theMsg) == checksum and ack_seq == str(sequence):
+                        gotAck = True
+
+                        if buffSize <= 2000:
+                            buffSize = buffSize * 2
+
+                        if pos > int(len(data) / 2) and flag_proceed:
+                            if pos<len(data):
+                                self.client_pos[name]=(pos,nameOfFile)
+                            flag=False
+
+
+            # changing the predicted sequence to the other one: 1->0, 0->1
+            sequence = (sequence + 1) % 2
+
 
     #this method returns the name of the user by its socket
     def findBySocet(self, so):
@@ -157,9 +183,19 @@ class Server:
                 l=f"{l},{k}"
         return l
 
+    def sending_proceed(self):
+        for name, p in self.client_pos.items():
+            if p[0]!=0:
+                self.client_sockets.get(name).send(("$proceed "+str(p[0])+" "+str(p[1])).encode())
+                self.client_pos[name]=(0,None)
+
+
     #this method is listening for clients
     def clientListen(self, cl, cAddr):
         while True:
+
+            self.sending_proceed()
+
             try:
                 msg = cl.recv(1024).decode()
 
@@ -181,6 +217,8 @@ class Server:
                     first_word = msg.split()[0]
 
                     self.client_sockets[first_word] = cl
+                    self.client_pos[first_word]=(0,None)
+
                     print("Adding new Client: "+first_word)
                     self.broadcast("new Client: "+first_word)
 
@@ -218,11 +256,30 @@ class Server:
                     files = os.listdir('.')
 
                     if msg in files:
-                        cl.send(("sending file: "+msg).encode())
-                        print("asking to download: "+ msg)
-                        theSender(msg,cAddr[0])
+
+                        if os.path.getsize(msg)<= 64000:
+
+                            cl.send(("sending file: "+msg).encode())
+                            print("asking to download: "+ msg)
+
+                            self.th1 = Thread(target=self.theSender(msg,cAddr[0],source,0))
+
+                            # make the thread run until the main thread die
+                            self.th1.daemon = True
+                            self.th1.start()
+                        else:
+                            cl.send("the size of the file is too big!".encode())
+
                     else:
                         cl.send("There is no such file.".encode())
+
+                elif first_word== "$proceed":
+
+                    self.th1 = Thread(target=self.theSender(msg.split()[1], cAddr[0], source,int(msg.split()[0])))
+
+                    # make the thread run until the main thread die
+                    self.th1.daemon = True
+                    self.th1.start()
 
             except Exception as e:
                 print("Error: " + e)
