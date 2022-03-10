@@ -40,21 +40,11 @@ def checksumCalculator(msg):
 
     return chr(int(ans / 256)) + chr(ans % 256)
 
-
-
-
-
-# ############################### SERVER #################################### #
-
-
-
-
 class Server:
 
     def __init__(self):
         self.client_sockets = {}
         self.client_pos = {}
-
 
 
     # this method sends the file to the client
@@ -92,7 +82,6 @@ class Server:
         socketSender = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         socketReceiver = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
-        # binding the socket
         socketReceiver.bind(recvT)
 
         # setting timeout
@@ -104,16 +93,19 @@ class Server:
 
         while pos < len(data) and flag:
 
-            # putting the data to send in the buffer
+            #if the buffer is big enoghe
             if pos + buffSize > len(data):
                 buff = data[pos:]
+
+            #if the buffer is not enoghe big
             else:
                 buff = data[pos:pos + buffSize]
-            pos += buffSize
 
-
+            # changing the loacation of the pos
+            pos = pos + buffSize
             gotAck = False
-            while not gotAck:
+
+            while gotAck==False:
                 m = str(checksumCalculator(buff)) + str(sequence) + str(buff)
                 socketSender.sendto(m.encode(), destT)
 
